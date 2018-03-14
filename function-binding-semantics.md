@@ -43,6 +43,33 @@ rv->__refcount = 1;
 x->__value(rv, x->__meta);
 ```
 
-## Binding semantics for capture-less functions
+## Binding semantics
+### Non-capturing functions
 
-Capture-less functions do not capture any variable (neither by value nor by reference) in their closure.
+Non-capturing functions do not capture any variable (neither by value nor by reference) in their closure.
+Hence, binding them by copy doesn't have any effect,
+and is actually equivalent to a reference binding.
+We could even omit the updates of the reference counter and manipulate the function pointer directly,
+as an unmanaged pointer.
+This also means a move binding would have the same semantics as a copy binding.
+
+### Capturing functions
+
+Capturing functions keep either a copy of or a reference on the values they capture in their closure.
+Hence, a copy binding should also copy all captured values,
+but there are different choice for the semantics of such copy:
+```anzen
+let x = 0
+fun f()[&- x] -> Int {
+  return x
+}
+
+// What is the value of `x` in g's closure?
+let g = f
+```
+
+Copying a value is supposed to perform a deep copy of said value.
+Hence, one could advocate for making `x` in `g`'s closure a copy of `x` in `f`'s closure.
+Preserving the reference capture would require the `g` to be bound by reference.
+But one could also argue that such semantics would seem counterintuitive,
+since `x` was explicitly captured by reference.
